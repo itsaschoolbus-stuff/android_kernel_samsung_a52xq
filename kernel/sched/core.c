@@ -28,15 +28,9 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
-#include <linux/sec_debug.h>
-
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
-#ifdef CONFIG_SEC_PERF_MANAGER
-unsigned long get_max_fps_util(int group_id);
-#endif /* CONFIG_FPS */
-
-#if defined(CONFIG_SCHED_DEBUG) && defined(CONFIG_JUMP_LABEL)
+#ifdef CONFIG_SCHED_DEBUG
 /*
  * Debugging: various feature bits
  *
@@ -1290,24 +1284,15 @@ long schedtune_task_margin(struct task_struct *task);
 unsigned int uclamp_task(struct task_struct *p)
 {
 	unsigned long util = task_util_est(p);
-	unsigned long ret_value = util;
-#ifdef CONFIG_SEC_PERF_MANAGER
-	unsigned long fps_util;
-#endif
-
 #ifdef CONFIG_SCHED_TUNE
 	long margin = schedtune_task_margin(p);
-	ret_value = util + margin;
-#ifdef CONFIG_SEC_PERF_MANAGER
-	if (p->drawing_flag) {
-		fps_util = get_max_fps_util(p->drawing_flag);
-		ret_value = max(ret_value, fps_util);
-	}
-#endif
+
 	trace_sched_boost_task(p, util, margin);
+
+	util += margin;
 #endif
 
-	return ret_value;
+	return util;
 }
 
 bool uclamp_boosted(struct task_struct *p)
@@ -1507,11 +1492,8 @@ static inline bool is_per_cpu_kthread(struct task_struct *p)
  */
 static inline bool is_cpu_allowed(struct task_struct *p, int cpu)
 {
-#ifdef CONFIG_SEC_PERF_MANAGER
-	if (!p->drawing_mig_boost)
-#endif
-		if (!cpumask_test_cpu(cpu, &p->cpus_allowed))
-			return false;
+	if (!cpumask_test_cpu(cpu, &p->cpus_allowed))
+		return false;
 
 	if (is_per_cpu_kthread(p))
 		return cpu_online(cpu);
@@ -3455,7 +3437,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 		/* Task is done with its stack. */
 		put_task_stack(prev);
 
-		put_task_struct(prev);
+		put_task_struct_rcu_user(prev);
 	}
 
 	tick_nohz_task_switch();
@@ -3834,6 +3816,14 @@ void scheduler_tick(void)
 
 	if (curr->sched_class == &fair_sched_class)
 		check_for_migration(rq, curr);
+
+#ifdef CONFIG_SMP
+	rq_lock(rq, &rf);
+	if (idle_cpu(cpu) && is_reserved(cpu) && !rq->active_balance)
+		clear_reserved(cpu);
+	rq_unlock(rq, &rf);
+#endif
+
 }
 
 #ifdef CONFIG_NO_HZ_FULL
@@ -4295,8 +4285,6 @@ static void __sched notrace __schedule(bool preempt)
 		++*switch_count;
 
 		trace_sched_switch(preempt, prev, next);
-
-		sec_debug_task_sched_log(cpu, preempt, next, prev);
 
 		/* Also unlocks the rq: */
 		rq = context_switch(rq, prev, next, &rf);

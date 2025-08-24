@@ -278,8 +278,6 @@ static int msm_ext_disp_audio_config(struct platform_device *pdev,
 	int ret = 0;
 	struct msm_ext_disp *ext_disp;
 
-	pr_debug("+++\n");
-
 	ext_disp = msm_ext_disp_validate_and_get(pdev, codec, state);
 	if (IS_ERR(ext_disp)) {
 		ret = PTR_ERR(ext_disp);
@@ -311,8 +309,6 @@ static int msm_ext_disp_audio_notify(struct platform_device *pdev,
 {
 	int ret = 0;
 	struct msm_ext_disp *ext_disp;
-
-	pr_debug("+++\n");
 
 	ext_disp = msm_ext_disp_validate_and_get(pdev, codec, state);
 	if (IS_ERR(ext_disp)) {
@@ -500,8 +496,6 @@ int msm_ext_disp_register_intf(struct platform_device *pdev,
 		pr_err("Invalid drvdata\n");
 		return -EINVAL;
 	}
-
-	pr_debug("+++\n");
 
 	ext_disp = container_of(ext_disp_data, struct msm_ext_disp,
 				ext_disp_data);

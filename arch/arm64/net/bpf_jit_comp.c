@@ -943,6 +943,7 @@ skip_init_ctx:
 #ifdef CONFIG_RKP
 	uh_call(UH_APP_RKP, RKP_BPF_LOAD, (u64)header, (u64)(header->pages * 0x1000), 0, 0);
 #endif
+
 	if (!prog->is_func || extra_pass) {
 out_off:
 		kfree(ctx.offset);

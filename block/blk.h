@@ -124,11 +124,7 @@ static inline void __blk_get_queue(struct request_queue *q)
 	kobject_get(&q->kobj);
 }
 
-static inline bool
-is_flush_rq(struct request *req, struct blk_mq_hw_ctx *hctx)
-{
-	return hctx->fq->flush_rq == req;
-}
+bool is_flush_rq(struct request *req);
 
 struct blk_flush_queue *blk_alloc_flush_queue(struct request_queue *q,
 		int node, int cmd_size, gfp_t flags);
@@ -195,18 +191,6 @@ unsigned int blk_plug_queued_count(struct request_queue *q);
 void blk_account_io_start(struct request *req, bool new_io);
 void blk_account_io_completion(struct request *req, unsigned int bytes);
 void blk_account_io_done(struct request *req, u64 now);
-
-#ifdef CONFIG_BLK_IO_VOLUME
-void blk_queue_reset_io_vol(struct request_queue *q);
-void blk_queue_io_vol_add(struct request_queue *q, int opf, long long bytes);
-void blk_queue_io_vol_del(struct request_queue *q, int opf, long long bytes);
-void blk_queue_io_vol_merge(struct request_queue *q, int opf, int rqs, long long bytes);
-#else
-#define blk_queue_reset_io_vol(q)			do {} while (0)
-#define blk_queue_io_vol_add(q, opf, bytes)		do {} while (0)
-#define blk_queue_io_vol_del(q, opf, bytes)		do {} while (0)
-#define blk_queue_io_vol_merge(q, opf, rqs, bytes)	do {} while (0)
-#endif
 
 /*
  * EH timer and IO completion will both attempt to 'grab' the request, make
