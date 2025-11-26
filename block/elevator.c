@@ -1005,7 +1005,8 @@ int elevator_init_mq(struct request_queue *q)
 	err = blk_mq_init_sched(q, e);
 	if (err)
 		elevator_put(e);
-out:
+out_unlock:
+	mutex_unlock(&q->sysfs_lock);
 	return err;
 }
 
