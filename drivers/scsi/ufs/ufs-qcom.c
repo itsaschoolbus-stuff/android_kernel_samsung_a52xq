@@ -2644,11 +2644,16 @@ int ufs_qcom_testbus_config(struct ufs_qcom_host *host)
 		goto out;
 	}
 	mask <<= offset;
+<<<<<<< HEAD
 
 	spin_unlock_irqrestore(hba->host->host_lock, flags);
 	if (reg) {
 		ufshcd_rmwl(host->hba, TEST_BUS_SEL,
 		    (u32)host->testbus.select_major << testbus_sel_offset,
+=======
+	ufshcd_rmwl(host->hba, TEST_BUS_SEL,
+		    (u32)host->testbus.select_major << 19,
+>>>>>>> ASB-2021-01-05_4.19-stable
 		    REG_UFS_CFG1);
 		ufshcd_rmwl(host->hba, mask,
 		    (u32)host->testbus.select_minor << offset,
@@ -2664,6 +2669,9 @@ int ufs_qcom_testbus_config(struct ufs_qcom_host *host)
 	 * committed before returning.
 	 */
 	mb();
+
+	return 0;
+
 out:
 	return ret;
 }
